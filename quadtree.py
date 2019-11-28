@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import os
 
 class quadtree: 
     def __init__(self, image, height, width):
@@ -40,17 +41,19 @@ class quadtree:
             print(level, '-- SW ',end='')
             self.imageSW.printTree(level+1)
 
-    def createImageLeveled(self, image, level):
-        resultHeight = 2**level
-        resultWidth = 2**level
+    def createLeveledCompression(self, image, level):
+        resultHeight = 1<<level
+        resultWidth = 1<<level
         imageResult = np.zeros((resultHeight,resultWidth,3), np.uint8)
+
         if(level==0):
             return image.mean
         else:
-            imageResult[0:image.halfHeight, 0:image.halfWidth] = image.createImageLeveled(image.imageNW, level-1)
-            imageResult[0:image.halfHeight, image.halfWidth:width] = image.createImageLeveled(image.imageNE, level-1)
-            imageResult[image.halfHeight:height, image.halfWidth:width] = image.createImageLeveled(image.imageSE, level-1)
-            imageResult[image.halfHeight:height, 0:image.halfWidth] = image.createImageLeveled(image.imageSW, level-1)
+            imageResult[0:(resultHeight>>1), 0:(resultWidth>>1)] = image.createLeveledCompression(image.imageNW, level-1)
+            imageResult[0:(resultHeight>>1), (resultWidth>>1):resultWidth] = image.createLeveledCompression(image.imageNE, level-1)
+            imageResult[(resultHeight>>1):resultHeight, (resultWidth>>1):resultWidth] = image.createLeveledCompression(image.imageSE, level-1)
+            imageResult[(resultHeight>>1):resultHeight, 0:(resultWidth>>1)] = image.createLeveledCompression(image.imageSW, level-1)
+
         return imageResult 
 
 
@@ -58,13 +61,19 @@ def showImage(imageName):
     cv2.imshow("Lenna",imageName)
     cv2.waitKey(0)
 
-imageInput = cv2.imread("./images/airplane.png")
+imageName = "lenna"
+folderPath = "./result/"+imageName
+
+imageInput = cv2.imread("./images/" + imageName + ".png")
 
 height, width = imageInput.shape[0], imageInput.shape[1]
 
 Q = quadtree(imageInput, height, width)
 
-# Q.printTree(0)
-for i in range(1,9):
-    image = Q.createImageLeveled(Q, i)
-    showImage(image)
+os.mkdir(folderPath)
+
+for i in range(1,10):
+    image = Q.createLeveledCompression(Q, i)
+    # showImage(image)
+    cv2.imwrite(folderPath + "/" + str(1<<i) + "x" + str(1<<i) + ".png", image)
+    print("Converted image of size " + str(1<<i) + "x" + str(1<<i))
