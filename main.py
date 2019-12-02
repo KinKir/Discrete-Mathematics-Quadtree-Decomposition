@@ -1,46 +1,31 @@
-import numpy as np
-import cv2
+import quadtree
 
-def showImage(imageName):
-    cv2.imshow("Lenna",imageName)
-    cv2.waitKey(0)
+imageName = "liechestein"
+imageName2 = "airplane"
+folderPath = "./result/"+imageName
 
-def quadtreeDecomposition(image, height, width, n):
-    if(n==0):
-        m,_ = cv2.meanStdDev(image)
-        m = tuple(m.flatten())
-        return m
-    else:
-        quadtreeImage = np.zeros((height,width,3), np.uint8)
-
-        halfHeight = height//2
-        halfWidth = width//2
-
-        # Northwest
-        imageNW = image[0:halfHeight,0:halfWidth]
-        quadtreeImage[0:halfHeight,0:halfWidth] = quadtreeDecomposition(imageNW, halfHeight, halfWidth, n-1)
-
-        # Northeast
-        imageNE = image[0:halfHeight,halfWidth:width]
-        quadtreeImage[0:halfHeight,halfWidth:width] = quadtreeDecomposition(imageNE, halfHeight, halfWidth, n-1)
-
-        # Southeast
-        imageSE = image[halfHeight:height,halfWidth:width]
-        quadtreeImage[halfHeight:height,halfWidth:width] = quadtreeDecomposition(imageSE, halfHeight, halfWidth, n-1)
-
-        # Southwest
-        imageSW = image[halfHeight:height,0:halfWidth]
-        quadtreeImage[halfHeight:height,0:halfWidth] = quadtreeDecomposition(imageSW, halfHeight, halfWidth, n-1)
-
-        return quadtreeImage
-
-
-imageInput = cv2.imread("./images/airplane.png")
+imageInput = cv2.imread("./images/" + imageName + ".png")
+imageInput2 = cv2.imread("./images/" + imageName2 + ".png")
 
 height, width = imageInput.shape[0], imageInput.shape[1]
 
-for i in range(1,8):
-    blank_image = quadtreeDecomposition(imageInput,height,width,i)
-    showImage(blank_image)
+print("Building quadtree representation of image...")
+Q = quadtree(imageInput, height, width)
+Q2 = quadtree(imageInput2, height, width)
 
+showImage(imageUnion(Q,Q2,8))
+showImage(Q.scrambleImage(8))
+
+print("Building quadtree representation of image...")
+Q3 = quadtree(Q.scrambleImage(8), height,width)
+showImage(Q3.scrambleImage(8))
+
+# Q.printTree(0)
+# os.mkdir(folderPath)
+
+# for i in range(1,10):
+#     image = Q.createLeveledCompression(Q, i)
+#     # showImage(image)
+#     cv2.imwrite(folderPath + "/" + str(1<<i) + "x" + str(1<<i) + ".png", image)
+#     print("Converted image of size " + str(1<<i) + "x" + str(1<<i))
 
