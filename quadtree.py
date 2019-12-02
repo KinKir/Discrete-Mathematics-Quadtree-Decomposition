@@ -2,12 +2,14 @@ import cv2
 import numpy as np
 import os
 import shutil
+
 class quadtree: 
     def __init__(self, image, height, width):
 
         # Set mean and STD of image region
         self.mean, self.std = cv2.meanStdDev(image)
         self.mean = tuple(self.mean.flatten())
+        self.std = sum(x for x in self.std.flatten()) / self.std.size
 
         # Set height and width of image region
         self.height = height
@@ -83,7 +85,7 @@ def exportScaling(filename, show=False):
     
     imageInput = cv2.imread(imagePath)
     Q = quadtree(imageInput, imageInput.shape[0], imageInput.shape[1])
-
+    
     print("Creating folder" + resultPath + "...")
     
     # Making an output folder
@@ -104,9 +106,81 @@ def exportScaling(filename, show=False):
             showImage(result)
         print("Writing image of size " + str(size) + "x" + str(size) + "...")
         cv2.imwrite(resultPath + "/" + str(size) + "x" + str(size) + ".png", result)
-        
-            
 
+# Procedure for segementing a quadtree image    
+def quadtreeSegmentation(filename, n, limit=7):
+    step = n
+    imagePath = "./images/" + filename
+    imageName = filename.split('.')[0]
+
+    imageInput = cv2.imread(imagePath)
+
+    print("Building quadtree representation of image..")
+    Q = quadtree(imageInput, imageInput.shape[0], imageInput.shape[1])
+
+    # Define queue for BFS
+    q = []
+    coordinateQueue1 = []
+    coordinateQueue2 = []
+    levelQueue = []
+
+    q.append(Q)
+    coordinateQueue1.append((0, 0))
+    coordinateQueue2.append((imageInput.shape[0], imageInput.shape[1]))
+    levelQueue.append(1)
+
+    # Define result size
+    resultHeight = imageInput.shape[0]
+    resultWidth = imageInput.shape[1]
+    imageResult = np.zeros((resultHeight,resultWidth,3), np.uint8)
+
+    cv2.imshow("Lenna", imageResult)
+    cv2.waitKey(0)
+
+    while(len(q)!=0 and step!=0):
+        currentNode = q.pop(0)
+        y1, x1 = coordinateQueue1.pop(0)
+        y2, x2 = coordinateQueue2.pop(0)
+        currentLevel = levelQueue.pop(0)
+
+        halfX = (x1+x2)//2
+        halfY = (y1+y2)//2
+
+        step-=1
+
+        if(currentNode.std>=5.0 and currentLevel<=limit):
+            imageResult[y1:halfY, x1:halfX] = currentNode.imageNW.mean
+            q.append(currentNode.imageNW)
+            coordinateQueue1.append((y1,x1))
+            coordinateQueue2.append((halfY,halfX))
+            levelQueue.append(currentLevel+1)
+
+            imageResult[y1:halfY, halfX:x2] = currentNode.imageNE.mean
+            q.append(currentNode.imageNE)
+            coordinateQueue1.append((y1,halfX))
+            coordinateQueue2.append((halfY,x2))
+            levelQueue.append(currentLevel+1)
+
+            imageResult[halfY:y2, halfX:x2] = currentNode.imageSE.mean
+            q.append(currentNode.imageSE)
+            coordinateQueue1.append((halfY,halfX))
+            coordinateQueue2.append((y2,x2))
+            levelQueue.append(currentLevel+1)
+            
+            imageResult[halfY:y2, x1:halfX] = currentNode.imageSW.mean
+            q.append(currentNode.imageSW)
+            coordinateQueue1.append((halfY,x1))
+            coordinateQueue2.append((y2,halfX))
+            levelQueue.append(currentLevel+1)
+            
+            showImage(imageResult)
+        else:
+            imageResult[y1:y2, x1:x2] = currentNode.mean
+    
+
+    print("Segmentation complete!")
+
+    cv2.waitKey(0)
 
 
 #     def scrambleImage(self, level):
@@ -148,5 +222,5 @@ def exportScaling(filename, show=False):
 
 def showImage(imageName):
     cv2.imshow("Lenna",imageName)
-    cv2.waitKey(0)
+    cv2.waitKey(2)
 
