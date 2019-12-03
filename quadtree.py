@@ -108,10 +108,10 @@ def exportScaling(filename, show=False):
         cv2.imwrite(resultPath + "/" + str(size) + "x" + str(size) + ".png", result)
 
 # Procedure for segementing a quadtree image    
-def quadtreeSegmentation(filename, n, limit=7):
-    step = n
+def quadtreeSegmentation(filename, limit=7, stdLimit=10.0, write=False):
     imagePath = "./images/" + filename
     imageName = filename.split('.')[0]
+    resultPath = "./result/"
 
     imageInput = cv2.imread(imagePath)
 
@@ -137,36 +137,41 @@ def quadtreeSegmentation(filename, n, limit=7):
     cv2.imshow("Lenna", imageResult)
     cv2.waitKey(0)
 
-    while(len(q)!=0 and step!=0):
+    while(len(q)!=0):
+        # Pop front of all queues
         currentNode = q.pop(0)
         y1, x1 = coordinateQueue1.pop(0)
         y2, x2 = coordinateQueue2.pop(0)
         currentLevel = levelQueue.pop(0)
 
+        # Find midpoint
         halfX = (x1+x2)//2
         halfY = (y1+y2)//2
 
-        step-=1
-
-        if(currentNode.std>=5.0 and currentLevel<=limit):
+        # If the STD is still larger than the stdLimit...
+        if(currentNode.std>=stdLimit and currentLevel<=limit):
+            # Partition NW region
             imageResult[y1:halfY, x1:halfX] = currentNode.imageNW.mean
             q.append(currentNode.imageNW)
             coordinateQueue1.append((y1,x1))
             coordinateQueue2.append((halfY,halfX))
             levelQueue.append(currentLevel+1)
 
+            # Partition NE region
             imageResult[y1:halfY, halfX:x2] = currentNode.imageNE.mean
             q.append(currentNode.imageNE)
             coordinateQueue1.append((y1,halfX))
             coordinateQueue2.append((halfY,x2))
             levelQueue.append(currentLevel+1)
 
+            # Partition SE region
             imageResult[halfY:y2, halfX:x2] = currentNode.imageSE.mean
             q.append(currentNode.imageSE)
             coordinateQueue1.append((halfY,halfX))
             coordinateQueue2.append((y2,x2))
             levelQueue.append(currentLevel+1)
             
+            # Partition SW region
             imageResult[halfY:y2, x1:halfX] = currentNode.imageSW.mean
             q.append(currentNode.imageSW)
             coordinateQueue1.append((halfY,x1))
@@ -174,13 +179,13 @@ def quadtreeSegmentation(filename, n, limit=7):
             levelQueue.append(currentLevel+1)
             
             showImage(imageResult)
-        else:
-            imageResult[y1:y2, x1:x2] = currentNode.mean
+        # else:
+        #     imageResult[y1:y2, x1:x2] = currentNode.mean
     
 
     print("Segmentation complete!")
-
     cv2.waitKey(0)
+    cv2.imwrite(resultPath + "lenna_modified.png", imageResult)
 
 
 #     def scrambleImage(self, level):
@@ -222,5 +227,5 @@ def quadtreeSegmentation(filename, n, limit=7):
 
 def showImage(imageName):
     cv2.imshow("Lenna",imageName)
-    cv2.waitKey(2)
+    cv2.waitKey(0)
 
