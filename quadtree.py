@@ -135,7 +135,7 @@ def quadtreeSegmentation(filename, limit=7, stdLimit=10.0, write=False):
     imageResult = np.zeros((resultHeight,resultWidth,3), np.uint8)
 
     cv2.imshow("Lenna", imageResult)
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
 
     while(len(q)!=0):
         # Pop front of all queues
@@ -178,54 +178,33 @@ def quadtreeSegmentation(filename, limit=7, stdLimit=10.0, write=False):
             coordinateQueue2.append((y2,halfX))
             levelQueue.append(currentLevel+1)
             
-            showImage(imageResult)
-        # else:
-        #     imageResult[y1:y2, x1:x2] = currentNode.mean
-    
+            # showImage(imageResult)
 
     print("Segmentation complete!")
+    showImage(imageResult)
     cv2.waitKey(0)
-    cv2.imwrite(resultPath + "lenna_modified.png", imageResult)
+    cv2.imwrite(resultPath + "lenna" + str(stdLimit) + "_" + str(limit) + ".png", imageResult)
 
+def imageUnion(image1, image2, level, alpha):
+    resultHeight = image1.height
+    resultWidth = image2.width
+    imageResult = np.zeros((resultHeight, resultWidth, 3), np.uint8)
 
-#     def scrambleImage(self, level):
-#         resultHeight = self.height
-#         resultWidth = self.width
-#         imageResult = np.zeros((resultHeight, resultWidth, 3), np.uint8)
+    if(level==0):
+        b1, g1, r1 = image1.mean
+        b2, g2, r2 = image2.mean
+        br, gr, rr = b1*alpha + b2*(1-alpha), g1*alpha + g2*(1-alpha), r1*alpha + r2*(1-alpha)
 
-#         if(level==0):
-#             return self.mean
-#         elif(level%2==0):
-#             imageResult[0:(resultHeight>>1), 0:(resultWidth>>1)] = self.imageSE.scrambleImage(level-1)
-#             imageResult[0:(resultHeight>>1), (resultWidth>>1):resultWidth] = self.imageSW.scrambleImage(level-1)
-#             imageResult[(resultHeight>>1):resultHeight, (resultWidth>>1):resultWidth] = self.imageNW.scrambleImage(level-1)
-#             imageResult[(resultHeight>>1):resultHeight, 0:(resultWidth>>1)] = self.imageNE.scrambleImage(level-1)
-#         elif(level%2==1):
-#             imageResult[0:(resultHeight>>1), 0:(resultWidth>>1)] = self.imageNW.scrambleImage(level-1)
-#             imageResult[0:(resultHeight>>1), (resultWidth>>1):resultWidth] = self.imageNE.scrambleImage(level-1)
-#             imageResult[(resultHeight>>1):resultHeight, (resultWidth>>1):resultWidth] = self.imageSE.scrambleImage(level-1)
-#             imageResult[(resultHeight>>1):resultHeight, 0:(resultWidth>>1)] = self.imageSW.scrambleImage(level-1)
-
-#         return imageResult
-
-# def imageUnion(image1, image2, level):
-#     resultHeight = image1.height
-#     resultWidth = image2.width
-#     imageResult = np.zeros((resultHeight, resultWidth, 3), np.uint8)
-
-#     if(level==0):
-#         colors = (image1.mean, image2.mean)
-#         averageColor = tuple(map(np.mean, zip(*colors)))
-#         return averageColor 
-#     else:
-#         imageResult[0:(resultHeight>>1), 0:(resultWidth>>1)] = imageUnion(image1.imageNW, image2.imageNW, level-1)
-#         imageResult[0:(resultHeight>>1), (resultWidth>>1):resultWidth] = imageUnion(image1.imageNE, image2.imageNE, level-1)
-#         imageResult[(resultHeight>>1):resultHeight, (resultWidth>>1):resultWidth] = imageUnion(image1.imageSE, image2.imageSE, level-1)
-#         imageResult[(resultHeight>>1):resultHeight, 0:(resultWidth>>1)] = imageUnion(image1.imageSW, image2.imageSW, level-1)
+        return (br, gr, rr)
+    else:
+        imageResult[0:(resultHeight>>1), 0:(resultWidth>>1)] = imageUnion(image1.imageNW, image2.imageNW, level-1, alpha)
+        imageResult[0:(resultHeight>>1), (resultWidth>>1):resultWidth] = imageUnion(image1.imageNE, image2.imageNE, level-1, alpha)
+        imageResult[(resultHeight>>1):resultHeight, (resultWidth>>1):resultWidth] = imageUnion(image1.imageSE, image2.imageSE, level-1, alpha)
+        imageResult[(resultHeight>>1):resultHeight, 0:(resultWidth>>1)] = imageUnion(image1.imageSW, image2.imageSW, level-1, alpha)
         
-#     return imageResult
+    return imageResult
 
 def showImage(imageName):
     cv2.imshow("Lenna",imageName)
-    cv2.waitKey(0)
+    cv2.waitKey(1)
 
