@@ -180,6 +180,8 @@ def quadtreeSegmentation(filename, limit=7, stdLimit=10.0, write=False):
             
             # showImage(imageResult)
 
+
+
     print("Segmentation complete!")
     showImage(imageResult)
     cv2.waitKey(0)
