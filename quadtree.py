@@ -135,7 +135,7 @@ def quadtreeSegmentation(filename, limit=7, stdLimit=10.0, write=False):
     imageResult = np.zeros((resultHeight,resultWidth,3), np.uint8)
 
     cv2.imshow("Lenna", imageResult)
-    # cv2.waitKey(0)
+    cv2.waitKey(0)
 
     while(len(q)!=0):
         # Pop front of all queues
@@ -178,7 +178,7 @@ def quadtreeSegmentation(filename, limit=7, stdLimit=10.0, write=False):
             coordinateQueue2.append((y2,halfX))
             levelQueue.append(currentLevel+1)
             
-            # showImage(imageResult)
+            showImage(imageResult)
 
 
 
